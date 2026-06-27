@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venv/bin/python -c \"import app; print\\('imports OK'\\)\")",
+      "Bash(ls \"/Users/sriramnarayanan/Desktop/CodePath/AI201_Su2026_Sriram/Week 4/assignment/\")",
+      "Read(//Users/sriramnarayanan/Desktop/CodePath/AI201_Su2026_Sriram/Week 4/assignment/**)",
+      "WebFetch(domain:www.loom.com)"
+    ]
+  }
+}
