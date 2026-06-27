@@ -8,6 +8,47 @@ A backend classification system that any creative sharing platform could plug in
 
 A submitted piece of text travels through the following path:
 
+```
+POST /submit  { text, creator_id, content_type? }
+        │
+        ▼
+   Validate input · generate content_id (UUID)
+        │
+        ├──────────────────┬──────────────────┐
+        ▼                  ▼                  ▼
+ detector_llm.py   detector_stylo.py   detector_bigram.py
+ Groq LLM          sentence variance   bigram repetition
+ (llama-3.3-70b)   TTR · punct/SVO     rate
+ llm_score 0–1     stylo_score 0–1     bigram_score 0–1
+        │                  │                  │
+        └──────────────────┴──────────────────┘
+                           │
+                           ▼
+                      scorer.py
+          confidence = 0.45×llm + 0.30×stylo + 0.25×bigram
+          voting layer → attribution (likely_ai / uncertain / likely_human)
+                           │
+                           ▼
+                      labeler.py
+               confidence → transparency label text
+                           │
+               ┌───────────┴───────────┐
+               ▼                       ▼
+          auditor.py              JSON response
+       append to              { content_id, attribution,
+       audit.jsonl               confidence, all scores,
+                                 label, status }
+
+POST /appeal  { content_id, creator_reasoning }
+        │
+        ▼
+   storage.py  status → "under_review"
+   auditor.py  append appeal entry
+        │
+        ▼
+   JSON { appeal_received: true, status: "under_review" }
+```
+
 1. **`POST /submit`** receives `{ text, creator_id, content_type? }` and generates a `content_id` (UUID).
 2. **`detector_llm.py`** sends the text to Groq (llama-3.3-70b-versatile) and returns a semantic AI-likelihood score (0.0–1.0). Uses a modified prompt when `content_type` is `image_description`.
 3. **`detector_stylo.py`** computes sentence length variance, type-token ratio, and punctuation density in pure Python and returns a structural AI-likelihood score (0.0–1.0). For `image_description`, `detector_image_meta.py` substitutes an SVO pattern score for punctuation density.
